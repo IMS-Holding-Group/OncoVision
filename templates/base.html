@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}OncoVision - نظام تحليل الماموجرام{% endblock %}</title>
+    <meta name="page-title" content="{% block page_title %}header.title{% endblock %}">
+    
+    <!-- Dark Theme CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dark-theme.css') }}">
+    
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="rtl">
+    <!-- Header -->
+    <header class="header" id="header">
+        <nav class="navbar">
+            <a href="{{ url_for('index') }}" class="logo">
+                <div class="logo-icon">
+                    <img src="{{ url_for('static', filename='../static/Onco_Vision-removebg-preview.png') }}" style="height: auto; width: 30px;" alt="">
+                </div>
+                <span data-translate="header.title">OncoVision</span>
+            </a>
+            
+            <ul class="nav-menu">
+                <li><a href="{{ url_for('index') }}" class="nav-link" data-translate="nav.home">الرئيسية</a></li>
+                
+                {% if session.user_id %}
+                    <li><a href="{{ url_for('analyze') }}" class="nav-link" data-translate="nav.analyze">تحليل</a></li>
+                    <li><a href="{{ url_for('history') }}" class="nav-link" data-translate="nav.history">السجل</a></li>
+                    <li><a href="{{ url_for('statistics') }}" class="nav-link" data-translate="nav.statistics">الإحصائيات</a></li>
+                    <li><a href="{{ url_for('logout') }}" class="nav-link" data-translate="nav.logout">تسجيل خروج</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}" class="nav-link" data-translate="login.title">تسجيل الدخول</a></li>
+                {% endif %}
+                
+                <li>
+                    <div class="language-toggle">
+                        <button class="lang-btn active" data-lang="ar">عربي</button>
+                        <button class="lang-btn" data-lang="en">EN</button>
+                        <div class="lang-toggle-bg rtl"></div>
+                    </div>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        <span>{{ message }}</span>
+                        <button class="flash-close" onclick="this.parentElement.remove()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Main Content -->
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <p class="footer-text" data-translate="header.subtitle">تحليل ذكي للماموجرام باستخدام الذكاء الاصطناعي</p>
+            
+            <div class="footer-links">
+                <a href="#" class="footer-link" data-translate="footer.privacy">سياسة الخصوصية</a>
+                <a href="#" class="footer-link" data-translate="footer.terms">شروط الاستخدام</a>
+                <a href="#" class="footer-link" data-translate="footer.contact">اتصل بنا</a>
+                <a href="#" class="footer-link" data-translate="footer.about">حول النظام</a>
+            </div>
+            
+            <p class="footer-text" data-translate="footer.copyright">&copy; 2025 OncoVision. جميع الحقوق محفوظة.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/language.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

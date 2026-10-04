@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}سجل التحليلات - OncoVision{% endblock %}
+{% block page_title %}history.title{% endblock %}
+
+{% block content %}
+<section class="history-page">
+    <div class="container">
+        <div class="page-header">
+            <h1 data-translate="history.title">سجل التحليلات</h1>
+            <a href="{{ url_for('analyze') }}" class="btn btn-primary" data-translate="history.new.analysis">تحليل
+                جديد</a>
+        </div>
+
+        {% if analyses %}
+        <div class="analyses-grid">
+            {% for analysis in analyses %}
+            <div class="analysis-card">
+                <div class="card-header">
+                    <span class="analysis-id">#{{ analysis.id }}</span>
+                    <span class="status {{ 'positive' if analysis.tumor_detected else 'negative' }}">
+                        {% if analysis.tumor_detected %}
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span data-translate="stats.tumor.detected">ورم محتمل</span>
+                        {% else %}
+                        <i class="fas fa-check-circle"></i>
+                        <span data-translate="stats.healthy">سليم</span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="file-row">
+                        <i class="fas fa-file-image"></i>
+                        <span class="file-name" title="{{ analysis.image_name }}">{{ analysis.image_name }}</span>
+                    </div>
+                    <div class="meta-row">
+                        <div class="meta-item">
+                            <span class="meta-label" data-translate="history.confidence">الثقة</span>
+                            <span class="meta-value">{{ "%.1f"|format(analysis.max_confidence * 100) }}%</span>
+                        </div>
+                        <div class="meta-item">
+                            <span class="meta-label" data-translate="history.date">التاريخ</span>
+                            <span class="meta-value">{{ analysis.created_at }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <a href="{{ url_for('analysis_detail', analysis_id=analysis.id) }}" class="btn btn-sm btn-secondary"
+                        data-translate="history.view">عرض</a>
+                    <form method="post" action="{{ url_for('delete_analysis', analysis_id=analysis.id) }}"
+                        style="display:inline;"
+                        onsubmit="return confirm(window.translate ? window.translate('common.confirm') + '؟' : 'تأكيد الحذف؟');">
+                        <button type="submit" class="btn btn-sm btn-secondary"
+                            data-translate="history.delete">حذف</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination -->
+        {% if total_pages > 1 %}
+        <div class="pagination">
+            {% if has_prev %}
+            <a href="{{ url_for('history', page=page-1) }}" class="btn btn-secondary"
+                data-translate="history.page.prev">السابق</a>
+            {% endif %}
+
+            <span class="page-info" data-translate="history.page.info">صفحة {{ page }} من {{ total_pages }}</span>
+
+            {% if has_next %}
+            <a href="{{ url_for('history', page=page+1) }}" class="btn btn-secondary"
+                data-translate="history.page.next">التالي</a>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <i class="fas fa-history"></i>
+            </div>
+            <h3 data-translate="history.empty">لا توجد تحليلات سابقة</h3>
+            <p data-translate="stats.no.data.desc">لم تقم بأي تحليلات بعد. ابدأ بتحليل صورة ماموجرام جديدة.</p>
+            <a href="{{ url_for('analyze') }}" class="btn btn-primary" data-translate="history.new.analysis">تحليل
+                جديد</a>
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .history-page {
+        padding: 2rem 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--primary-pink);
+    }
+
+    /* Grid layout */
+    .analyses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .analysis-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        -webkit-backdrop-filter: blur(2px);
+        backdrop-filter: blur(2px);
+    }
+
+    .analysis-card .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .analysis-id {
+        color: var(--gray);
+        font-weight: 600;
+    }
+
+    .analysis-card .card-body {
+        padding: 1rem;
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .file-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--white);
+    }
+
+    .file-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .meta-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .meta-item {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .meta-label {
+        color: var(--gray);
+        font-size: 0.8rem;
+    }
+
+    .meta-value {
+        color: var(--white);
+        font-weight: 600;
+    }
+
+    .card-actions {
+        padding: 0.75rem 1rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+    }
+
+    .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: bold;
+    }
+
+    .status.positive {
+        background: rgba(220, 53, 69, 0.12);
+        color: var(--error);
+    }
+
+    .status.negative {
+        background: rgba(40, 167, 69, 0.12);
+        color: var(--success);
+    }
+
+    .btn-sm {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .page-info {
+        color: var(--gray);
+        font-weight: bold;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--primary-pink);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: var(--white);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state p {
+        color: var(--gray);
+        margin-bottom: 2rem;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+        .meta-row {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}

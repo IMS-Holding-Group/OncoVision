@@ -1,0 +1,2506 @@
+{% extends "base.html" %}
+
+{% block title %}تحليل الصور الطبية - OncoVision{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/analysis.css') }}">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="analyze-container">
+    <!-- Upload Section -->
+    <div class="upload-section">
+        <div class="upload-card">
+            <!-- Upload Header -->
+            <div class="upload-header">
+                <div class="header-icon">
+                    <i class="fas fa-microscope"></i>
+                </div>
+                <div class="header-content">
+                    <h2 data-translate="analysis.title">تحليل الصور الطبية</h2>
+                    <p data-translate="analysis.subtitle">رفع صورة طبية للحصول على تحليل دقيق باستخدام الذكاء الاصطناعي
+                    </p>
+                </div>
+            </div>
+
+            <!-- Main Upload Area -->
+            <div class="upload-main">
+                <!-- Upload Card -->
+                <div class="upload-card-container">
+                    <div class="upload-area" id="upload-area">
+                        <div class="upload-card-inner">
+                            <div class="upload-icon-wrapper">
+                                <div class="upload-icon">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                </div>
+                                <div class="upload-pulse"></div>
+                            </div>
+                            <div class="upload-content">
+                                <h3 data-translate="analysis.upload.drag">اسحب الصورة هنا أو انقر للاختيار</h3>
+                                <p data-translate="analysis.upload.formats">الصيغ المدعومة: JPG, PNG, DICOM</p>
+                                <div class="upload-hint-card">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>يمكنك سحب وإفلات الصورة مباشرة أو النقر للاختيار</span>
+                                </div>
+                            </div>
+                            <div class="upload-border-effect"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Cards -->
+                <div class="settings-cards-container">
+                    <div class="settings-header-card">
+                        <i class="fas fa-sliders-h settings-icon"></i>
+                        <h4 data-translate="analysis.settings.title">إعدادات التحليل</h4>
+                    </div>
+
+                    <div class="settings-cards-grid">
+                        <!-- Confidence Card -->
+                        <div class="setting-card">
+                            <div class="setting-card-header">
+                                <div class="setting-icon">
+                                    <i class="fas fa-bullseye"></i>
+                                </div>
+                                <div class="setting-info">
+                                    <label data-translate="analysis.settings.confidence">مستوى الثقة</label>
+                                    <div class="setting-description" data-translate="analysis.settings.confidence.desc">
+                                        حدد الحد الأدنى لمستوى الثقة في النتائج</div>
+                                </div>
+                            </div>
+                            <div class="setting-card-body">
+                                <div class="slider-container">
+                                    <input type="range" id="confidence-slider" min="0.1" max="1.0" step="0.1"
+                                        value="0.5" aria-label="Confidence Level">
+                                </div>
+                                <div class="setting-value-card" id="confidence-value">50%</div>
+                            </div>
+                        </div>
+
+                        <!-- IoU Card -->
+                        <div class="setting-card">
+                            <div class="setting-card-header">
+                                <div class="setting-icon">
+                                    <i class="fas fa-crosshairs"></i>
+                                </div>
+                                <div class="setting-info">
+                                    <label data-translate="analysis.settings.iou">IoU Threshold</label>
+                                    <div class="setting-description" data-translate="analysis.settings.iou.desc">حدد
+                                        عتبة التداخل للكشف عن الأورام</div>
+                                </div>
+                            </div>
+                            <div class="setting-card-body">
+                                <div class="slider-container">
+                                    <input type="range" id="iou-slider" min="0.1" max="1.0" step="0.1" value="0.5"
+                                        aria-label="IoU Threshold">
+                                </div>
+                                <div class="setting-value-card" id="iou-value">50%</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Upload Actions -->
+            <div class="upload-actions">
+                <div class="action-buttons">
+                    <button class="btn-analyze" id="analyze-btn" disabled>
+                        <i class="fas fa-play"></i>
+                        <span data-translate="analysis.analyze">بدء التحليل</span>
+                    </button>
+                </div>
+
+                <div class="navigation-buttons">
+                    <button class="btn-nav" id="history-btn" style="display: none;">
+                        <i class="fas fa-history"></i>
+                        <span data-translate="nav.history">السجل</span>
+                    </button>
+                    <button class="btn-nav" id="statistics-btn" style="display: none;">
+                        <i class="fas fa-chart-bar"></i>
+                        <span data-translate="nav.statistics">الإحصائيات</span>
+                    </button>
+                    <button class="btn-nav" id="settings-btn">
+                        <i class="fas fa-cog"></i>
+                        <span data-translate="nav.settings">الإعدادات</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="results-section" id="results-section" style="display: none;">
+        <div class="results-card">
+            <div class="results-header">
+                <h3 data-translate="analysis.results.title">نتائج التحليل</h3>
+                <div class="results-actions">
+                    <button class="btn-save" id="save-results" style="display: none;">
+                        <i class="fas fa-save"></i>
+                        <span data-translate="analysis.save">حفظ النتائج</span>
+                    </button>
+                    <button class="btn-close" id="close-results">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="results-content" id="results-content">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- History Section -->
+    <div class="history-section" id="history-section" style="display: none;">
+        <div class="history-card">
+            <div class="history-header">
+                <h3 data-translate="history.title">سجل التحليلات</h3>
+                <button class="btn-close" id="close-history">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="history-content" id="history-content">
+                <div class="history-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>جاري تحميل السجل...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="statistics-section" id="statistics-section" style="display: none;">
+        <div class="statistics-card">
+            <div class="statistics-header">
+                <h3 data-translate="stats.title">الإحصائيات والتقارير</h3>
+                <button class="btn-close" id="close-statistics">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="statistics-content" id="statistics-content">
+                <div class="statistics-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>جاري تحميل الإحصائيات...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Settings Section -->
+    <div class="advanced-settings-section" id="advanced-settings-section" style="display: none;">
+        <div class="advanced-settings-card">
+            <div class="advanced-settings-header">
+                <h3 data-translate="settings.advanced.title">الإعدادات المتقدمة</h3>
+                <button class="btn-close" id="close-advanced-settings">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="advanced-settings-content">
+                <div class="settings-grid">
+                    <div class="setting-group">
+                        <h4 data-translate="settings.model.title">إعدادات النموذج</h4>
+                        <div class="setting-item">
+                            <label data-translate="settings.model.type">نوع النموذج:</label>
+                            <select id="model-type">
+                                <option value="yolov8n">YOLOv8 Nano</option>
+                                <option value="yolov8s">YOLOv8 Small</option>
+                                <option value="yolov8m">YOLOv8 Medium</option>
+                                <option value="yolov8l">YOLOv8 Large</option>
+                                <option value="yolov8x">YOLOv8 XLarge</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label data-translate="settings.model.confidence">عتبة الثقة الافتراضية:</label>
+                            <input type="range" id="default-confidence" min="0.1" max="1.0" step="0.05" value="0.5">
+                            <span id="default-confidence-value">50%</span>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4 data-translate="settings.display.title">إعدادات العرض</h4>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="show-confidence-scores" checked>
+                                <span data-translate="settings.display.confidence">عرض درجات الثقة</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="show-bounding-boxes" checked>
+                                <span data-translate="settings.display.boxes">عرض المربعات المحيطة</span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="show-labels" checked>
+                                <span data-translate="settings.display.labels">عرض التسميات</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <h4 data-translate="settings.export.title">إعدادات التصدير</h4>
+                        <div class="setting-item">
+                            <label data-translate="settings.export.format">تنسيق التصدير:</label>
+                            <select id="export-format">
+                                <option value="json">JSON</option>
+                                <option value="csv">CSV</option>
+                                <option value="xml">XML</option>
+                            </select>
+                        </div>
+                        <div class="setting-item">
+                            <label>
+                                <input type="checkbox" id="auto-save-results" checked>
+                                <span data-translate="settings.export.auto">حفظ النتائج تلقائياً</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn-save-settings" id="save-settings">
+                        <i class="fas fa-save"></i>
+                        <span data-translate="settings.save">حفظ الإعدادات</span>
+                    </button>
+                    <button class="btn-reset-settings" id="reset-settings">
+                        <i class="fas fa-undo"></i>
+                        <span data-translate="settings.reset">إعادة تعيين</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input -->
+<input type="file" id="file-input" accept=".jpg,.jpeg,.png,.dcm,.dicom" style="display: none;">
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const confidenceSlider = document.getElementById('confidence-slider');
+        const iouSlider = document.getElementById('iou-slider');
+        const confidenceValue = document.getElementById('confidence-value');
+        const iouValue = document.getElementById('iou-value');
+        const resultsSection = document.getElementById('results-section');
+        const closeResults = document.getElementById('close-results');
+        const saveResults = document.getElementById('save-results');
+
+        // Navigation elements
+        const historyBtn = document.getElementById('history-btn');
+        const statisticsBtn = document.getElementById('statistics-btn');
+        const settingsBtn = document.getElementById('settings-btn');
+
+        // Sections
+        const historySection = document.getElementById('history-section');
+        const statisticsSection = document.getElementById('statistics-section');
+        const advancedSettingsSection = document.getElementById('advanced-settings-section');
+
+        // Close buttons
+        const closeHistory = document.getElementById('close-history');
+        const closeStatistics = document.getElementById('close-statistics');
+        const closeAdvancedSettings = document.getElementById('close-advanced-settings');
+
+        // Settings elements
+        const defaultConfidence = document.getElementById('default-confidence');
+        const defaultConfidenceValue = document.getElementById('default-confidence-value');
+        const saveSettings = document.getElementById('save-settings');
+        const resetSettings = document.getElementById('reset-settings');
+
+        let selectedFile = null;
+        let currentAnalysisId = null;
+
+        // File upload handling
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('drag-over');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('drag-over');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFileSelect(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        function handleFileSelect(file) {
+            selectedFile = file;
+
+            // Update upload area to show selected file
+            uploadArea.innerHTML = `
+            <div class="file-selected-card">
+                <div class="file-icon">
+                    <i class="fas fa-file-image"></i>
+                </div>
+                <div class="file-details">
+                    <div class="file-name">${file.name}</div>
+                    <div class="file-size">${(file.size / 1024 / 1024).toFixed(2)} MB</div>
+                </div>
+                <button class="remove-file-btn" onclick="removeFile()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+
+            analyzeBtn.disabled = false;
+            analyzeBtn.classList.add('btn-enabled');
+        }
+
+        function removeFile() {
+            selectedFile = null;
+            uploadArea.innerHTML = `
+            <div class="upload-card-inner">
+                <div class="upload-icon-wrapper">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-pulse"></div>
+                </div>
+                <div class="upload-content">
+                    <h3 data-translate="analysis.upload.drag">اسحب الصورة هنا أو انقر للاختيار</h3>
+                    <p data-translate="analysis.upload.formats">الصيغ المدعومة: JPG, PNG, DICOM</p>
+                    <div class="upload-hint-card">
+                        <i class="fas fa-info-circle"></i>
+                        <span>يمكنك سحب وإفلات الصورة مباشرة أو النقر للاختيار</span>
+                    </div>
+                </div>
+                <div class="upload-border-effect"></div>
+            </div>
+        `;
+            analyzeBtn.disabled = true;
+            analyzeBtn.classList.remove('btn-enabled');
+        }
+
+        // Slider updates
+        confidenceSlider.addEventListener('input', (e) => {
+            const value = Math.round(e.target.value * 100);
+            confidenceValue.textContent = value + '%';
+        });
+
+        iouSlider.addEventListener('input', (e) => {
+            const value = Math.round(e.target.value * 100);
+            iouValue.textContent = value + '%';
+        });
+
+        // Analyze button
+        analyzeBtn.addEventListener('click', () => {
+            if (selectedFile) {
+                // Show loading state
+                analyzeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i><span>جاري التحليل...</span>';
+                analyzeBtn.disabled = true;
+
+                // Prepare form data
+                const formData = new FormData();
+                formData.append('image', selectedFile);
+                formData.append('confidence', confidenceSlider.value);
+                formData.append('iou', iouSlider.value);
+
+                // Send to server
+                fetch('/analyze', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            displayResults(data);
+                            showResults();
+                        } else {
+                            showError(data.error || 'حدث خطأ أثناء التحليل');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showError('حدث خطأ في الاتصال بالخادم');
+                    })
+                    .finally(() => {
+                        analyzeBtn.innerHTML = '<i class="fas fa-play"></i><span data-translate="analysis.analyze">بدء التحليل</span>';
+                        analyzeBtn.disabled = false;
+                    });
+            }
+        });
+
+        function displayResults(data) {
+            const resultsContent = document.getElementById('results-content');
+
+            let resultsHTML = `
+                <div class="analysis-summary">
+                    <div class="summary-card">
+                        <h4>ملخص التحليل</h4>
+                    <div class="summary-stats">
+                        <div class="stat-item">
+                                <span class="stat-label">عدد الأورام المكتشفة:</span>
+                                <span class="stat-value">${data.tumors_detected || 0}</span>
+                        </div>
+                        <div class="stat-item">
+                                <span class="stat-label">مستوى الثقة:</span>
+                                <span class="stat-value">${Math.round(data.confidence * 100)}%</span>
+                        </div>
+                        <div class="stat-item">
+                                <span class="stat-label">وقت التحليل:</span>
+                                <span class="stat-value">${data.processing_time || 'غير محدد'}</span>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+            `;
+
+            if (data.result_image) {
+                resultsHTML += `
+                    <div class="result-image-container">
+                        <h4>الصورة المحللة</h4>
+                        <div class="result-image-wrapper">
+                            <img src="${data.result_image}" alt="نتائج التحليل" class="result-image">
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.tumors && data.tumors.length > 0) {
+                resultsHTML += `
+                    <div class="tumors-detailed">
+                        <h4>تفاصيل الأورام المكتشفة</h4>
+                        <div class="tumors-list">
+                `;
+
+                data.tumors.forEach((tumor, index) => {
+                    resultsHTML += `
+                        <div class="tumor-item">
+                            <div class="tumor-header">
+                                <h5>ورم ${index + 1}</h5>
+                                <span class="confidence-badge">${Math.round(tumor.confidence * 100)}%</span>
+                </div>
+                            <div class="tumor-details">
+                                <div class="detail-row">
+                                    <span class="detail-label">الموقع:</span>
+                                    <span class="detail-value">X: ${tumor.x}, Y: ${tumor.y}</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">الحجم:</span>
+                                    <span class="detail-value">${tumor.width} × ${tumor.height} بكسل</span>
+                                </div>
+                                <div class="detail-row">
+                                    <span class="detail-label">المساحة:</span>
+                                    <span class="detail-value">${tumor.area} بكسل²</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                resultsHTML += `
+                        </div>
+                    </div>
+                `;
+            }
+
+            if (data.recommendations) {
+                resultsHTML += `
+                    <div class="recommendations">
+                        <h4>التوصيات</h4>
+                        <div class="recommendations-list">
+                            ${data.recommendations.map(rec => `<div class="recommendation-item"><i class="fas fa-check-circle"></i>${rec}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultsContent.innerHTML = resultsHTML;
+        }
+
+        function showResults() {
+            resultsSection.style.display = 'block';
+            resultsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            const resultsContent = document.getElementById('results-content');
+            resultsContent.innerHTML = `
+                <div class="error-message">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>خطأ في التحليل</h4>
+                    <p>${message}</p>
+                    <button class="btn-retry" onclick="location.reload()">
+                        <i class="fas fa-redo"></i>
+                        إعادة المحاولة
+                    </button>
+                </div>
+            `;
+            showResults();
+        }
+
+        closeResults.addEventListener('click', () => {
+            resultsSection.style.display = 'none';
+        });
+
+        // Save results functionality
+        saveResults.addEventListener('click', () => {
+            if (currentAnalysisId) {
+                // Save current analysis to history
+                fetch('/save_analysis', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        analysis_id: currentAnalysisId,
+                        save_to_history: true
+                    })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('تم حفظ النتائج بنجاح', 'success');
+                            saveResults.style.display = 'none';
+                        } else {
+                            showNotification('فشل في حفظ النتائج', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving results:', error);
+                        showNotification('حدث خطأ أثناء حفظ النتائج', 'error');
+                    });
+            }
+        });
+
+        // Navigation functionality
+        historyBtn.addEventListener('click', () => {
+            loadHistory();
+            historySection.style.display = 'block';
+            historySection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        statisticsBtn.addEventListener('click', () => {
+            loadStatistics();
+            statisticsSection.style.display = 'block';
+            statisticsSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        settingsBtn.addEventListener('click', () => {
+            loadSettings();
+            advancedSettingsSection.style.display = 'block';
+            advancedSettingsSection.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // Close sections
+        closeHistory.addEventListener('click', () => {
+            historySection.style.display = 'none';
+        });
+
+        closeStatistics.addEventListener('click', () => {
+            statisticsSection.style.display = 'none';
+        });
+
+        closeAdvancedSettings.addEventListener('click', () => {
+            advancedSettingsSection.style.display = 'none';
+        });
+
+        // Settings functionality
+        defaultConfidence.addEventListener('input', (e) => {
+            const value = Math.round(e.target.value * 100);
+            defaultConfidenceValue.textContent = value + '%';
+        });
+
+        saveSettings.addEventListener('click', () => {
+            const settings = {
+                model_type: document.getElementById('model-type').value,
+                default_confidence: defaultConfidence.value,
+                show_confidence_scores: document.getElementById('show-confidence-scores').checked,
+                show_bounding_boxes: document.getElementById('show-bounding-boxes').checked,
+                show_labels: document.getElementById('show-labels').checked,
+                export_format: document.getElementById('export-format').value,
+                auto_save_results: document.getElementById('auto-save-results').checked
+            };
+
+            localStorage.setItem('oncovision_settings', JSON.stringify(settings));
+            showNotification('تم حفظ الإعدادات بنجاح', 'success');
+        });
+
+        resetSettings.addEventListener('click', () => {
+            if (confirm('هل تريد إعادة تعيين جميع الإعدادات إلى القيم الافتراضية؟')) {
+                localStorage.removeItem('oncovision_settings');
+                loadSettings();
+                showNotification('تم إعادة تعيين الإعدادات', 'success');
+            }
+        });
+
+        // Load functions
+        function loadHistory() {
+            const historyContent = document.getElementById('history-content');
+            historyContent.innerHTML = `
+                <div class="history-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>جاري تحميل السجل...</span>
+                </div>
+            `;
+
+            fetch('/api/history')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayHistory(data.analyses);
+                    } else {
+                        showHistoryError(data.error || 'فشل في تحميل السجل');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading history:', error);
+                    showHistoryError('حدث خطأ في تحميل السجل');
+                });
+        }
+
+        function loadStatistics() {
+            const statisticsContent = document.getElementById('statistics-content');
+            statisticsContent.innerHTML = `
+                <div class="statistics-loading">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>جاري تحميل الإحصائيات...</span>
+                </div>
+            `;
+
+            fetch('/api/statistics')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayStatistics(data.stats);
+                    } else {
+                        showStatisticsError(data.error || 'فشل في تحميل الإحصائيات');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading statistics:', error);
+                    showStatisticsError('حدث خطأ في تحميل الإحصائيات');
+                });
+        }
+
+        function loadSettings() {
+            const savedSettings = localStorage.getItem('oncovision_settings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('model-type').value = settings.model_type || 'yolov8m';
+                defaultConfidence.value = settings.default_confidence || 0.5;
+                defaultConfidenceValue.textContent = Math.round((settings.default_confidence || 0.5) * 100) + '%';
+                document.getElementById('show-confidence-scores').checked = settings.show_confidence_scores !== false;
+                document.getElementById('show-bounding-boxes').checked = settings.show_bounding_boxes !== false;
+                document.getElementById('show-labels').checked = settings.show_labels !== false;
+                document.getElementById('export-format').value = settings.export_format || 'json';
+                document.getElementById('auto-save-results').checked = settings.auto_save_results !== false;
+            }
+        }
+
+        function displayHistory(analyses) {
+            const historyContent = document.getElementById('history-content');
+
+            if (analyses.length === 0) {
+                historyContent.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-history"></i>
+                        <h4>لا توجد تحليلات سابقة</h4>
+                        <p>ابدأ بتحليل صورة جديدة لرؤية السجل هنا</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let historyHTML = '<div class="analyses-grid">';
+
+            analyses.forEach(analysis => {
+                historyHTML += `
+                    <div class="analysis-card">
+                        <div class="card-header">
+                            <span class="analysis-id">#${analysis.id}</span>
+                            <span class="status ${analysis.tumor_detected ? 'positive' : 'negative'}">
+                                ${analysis.tumor_detected ?
+                        '<i class="fas fa-exclamation-triangle"></i><span>ورم محتمل</span>' :
+                        '<i class="fas fa-check-circle"></i><span>سليم</span>'
+                    }
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="file-row">
+                                <i class="fas fa-file-image"></i>
+                                <span class="file-name">${analysis.image_name}</span>
+                            </div>
+                            <div class="meta-row">
+                                <div class="meta-item">
+                                    <span class="meta-label">الثقة</span>
+                                    <span class="meta-value">${Math.round(analysis.max_confidence * 100)}%</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-label">التاريخ</span>
+                                    <span class="meta-value">${new Date(analysis.created_at).toLocaleDateString('ar-SA')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-actions">
+                            <button class="btn-view" onclick="viewAnalysis(${analysis.id})">
+                                <i class="fas fa-eye"></i>
+                                عرض
+                            </button>
+                            <button class="btn-delete" onclick="deleteAnalysis(${analysis.id})">
+                                <i class="fas fa-trash"></i>
+                                حذف
+                    </button>
+                </div>
+            </div>
+                `;
+            });
+
+            historyHTML += '</div>';
+            historyContent.innerHTML = historyHTML;
+        }
+
+        function displayStatistics(stats) {
+            const statisticsContent = document.getElementById('statistics-content');
+
+            let statsHTML = `
+                <div class="stats-grid">
+                    <div class="stats-card">
+                        <div class="card-icon">
+                            <i class="fas fa-chart-line"></i>
+        </div>
+                        <div class="card-content">
+                            <h3>إجمالي التحليلات</h3>
+                            <div class="stat-number">${stats.total_analyses || 0}</div>
+                        </div>
+    </div>
+
+                    <div class="stats-card">
+                        <div class="card-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+            </div>
+                        <div class="card-content">
+                            <h3>الحالات الإيجابية</h3>
+                            <div class="stat-number positive">${stats.positive_cases || 0}</div>
+        </div>
+    </div>
+                    
+                    <div class="stats-card">
+                        <div class="card-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>الحالات السليمة</h3>
+                            <div class="stat-number negative">${stats.negative_cases || 0}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-card">
+                        <div class="card-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="card-content">
+                            <h3>معدل الدقة</h3>
+                            <div class="stat-number">${Math.round(stats.accuracy || 0)}%</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            if (stats.chart_data) {
+                statsHTML += `
+                    <div class="chart-container">
+                        <canvas id="statisticsChart"></canvas>
+                    </div>
+                `;
+            }
+
+            statisticsContent.innerHTML = statsHTML;
+        }
+
+        function showHistoryError(message) {
+            const historyContent = document.getElementById('history-content');
+            historyContent.innerHTML = `
+                <div class="error-message">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>خطأ في تحميل السجل</h4>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showStatisticsError(message) {
+            const statisticsContent = document.getElementById('statistics-content');
+            statisticsContent.innerHTML = `
+                <div class="error-message">
+                    <div class="error-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <h4>خطأ في تحميل الإحصائيات</h4>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification notification-${type}`;
+            notification.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.classList.add('show');
+            }, 100);
+
+            setTimeout(() => {
+                notification.classList.remove('show');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+
+        // Global functions for history actions
+        window.viewAnalysis = function (analysisId) {
+            window.open(`/analysis_detail/${analysisId}`, '_blank');
+        };
+
+        window.deleteAnalysis = function (analysisId) {
+            if (confirm('هل تريد حذف هذا التحليل؟')) {
+                fetch(`/delete_analysis/${analysisId}`, {
+                    method: 'POST'
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('تم حذف التحليل بنجاح', 'success');
+                            loadHistory(); // Reload history
+                        } else {
+                            showNotification('فشل في حذف التحليل', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting analysis:', error);
+                        showNotification('حدث خطأ أثناء حذف التحليل', 'error');
+                    });
+            }
+        };
+
+        // Load settings on page load
+        loadSettings();
+    });
+</script>
+
+<style>
+    /* Reset and Base Styles */
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #1a1a1a;
+        min-height: 100vh;
+        color: #e0e0e0;
+    }
+
+    /* Container */
+    .analyze-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    /* Upload Section */
+    .upload-section {
+        margin-bottom: 3rem;
+    }
+
+    .upload-card {
+        background: #2d2d2d;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #404040;
+    }
+
+    .upload-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+    }
+
+    /* Upload Header */
+    .upload-header {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 3rem 3rem 2rem;
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .header-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2.5rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    }
+
+    .header-content h2 {
+        font-size: 2.2rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 0.5rem;
+    }
+
+    .header-content p {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+        line-height: 1.65;
+    }
+
+    /* Upload Main */
+    .upload-main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        min-height: 500px;
+        padding: 2rem;
+    }
+
+    .upload-area {
+        height: 100%;
+        cursor: pointer;
+        position: relative;
+        border-radius: 24px;
+        overflow: hidden;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        border: 2px solid #4a5568;
+    }
+
+    .upload-area::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.1) 50%, transparent 70%);
+        transform: translateX(-100%);
+        transition: transform 0.8s ease;
+        z-index: 1;
+    }
+
+    .upload-area:hover::before {
+        transform: translateX(100%);
+    }
+
+    .upload-area.drag-over {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transform: scale(1.05);
+        box-shadow: 0 25px 50px rgba(102, 126, 234, 0.5);
+        border-color: #667eea;
+    }
+
+    .upload-icon {
+        font-size: 5rem;
+        color: white;
+        position: relative;
+        z-index: 2;
+        animation: float 3s ease-in-out infinite;
+
+    }
+
+    @keyframes float {
+
+        0%,
+        100% {
+            transform: translateY(0px);
+        }
+
+        50% {
+            transform: translateY(-20px);
+        }
+    }
+
+    .upload-content h3 {
+        color: white;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+
+    .upload-content p {
+        color: white;
+        font-size: 1.1rem;
+        margin-bottom: 2rem;
+        opacity: 0.9;
+    }
+
+    /* New Upload Card Design */
+    .upload-card-container {
+        position: relative;
+        height: 100%;
+    }
+
+    .upload-card-inner {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 3rem 2rem;
+        position: relative;
+        z-index: 2;
+    }
+
+    .upload-icon-wrapper {
+        position: relative;
+        margin-bottom: 2rem;
+    }
+
+    .upload-pulse {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 120px;
+        height: 120px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+        0% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 1;
+        }
+
+        100% {
+            transform: translate(-50%, -50%) scale(1.5);
+            opacity: 0;
+        }
+    }
+
+    .upload-content {
+        text-align: center;
+        z-index: 2;
+        position: relative;
+    }
+
+    .upload-hint-card {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: rgba(102, 126, 234, 0.3);
+        padding: 1rem 1.5rem;
+        border-radius: 25px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(102, 126, 234, 0.5);
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: white;
+    }
+
+    .upload-hint-card i {
+        font-size: 1.2rem;
+    }
+
+    .upload-border-effect {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(102, 126, 234, 0.3) 50%, transparent 70%);
+        transform: translateX(-100%);
+        transition: transform 0.8s ease;
+        z-index: 1;
+    }
+
+    .upload-area:hover .upload-border-effect {
+        transform: translateX(100%);
+    }
+
+    /* Settings Cards Design */
+    .settings-cards-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .settings-header-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        text-align: center;
+        color: white;
+        box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .settings-header-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, transparent 30%, rgba(255, 255, 255, 0.2) 50%, transparent 70%);
+        transform: translateX(-100%);
+        transition: transform 0.8s ease;
+    }
+
+    .settings-header-card:hover::before {
+        transform: translateX(100%);
+    }
+
+    .settings-icon {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: white;
+    }
+
+    .settings-header-card h4 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+    }
+
+    .settings-cards-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .setting-card {
+        background: #3a3a3a;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        border: 1px solid #4a5568;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .setting-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.4s ease;
+    }
+
+    .setting-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        border-color: #667eea;
+    }
+
+    .setting-card:hover::before {
+        transform: scaleX(1);
+    }
+
+    .setting-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .setting-card-header .setting-icon {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .setting-info {
+        flex: 1;
+    }
+
+    .setting-info label {
+        display: block;
+        font-weight: 700;
+        color: #e0e0e0;
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .setting-description {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        font-style: italic;
+    }
+
+    .setting-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+
+    .slider-container {
+        position: relative;
+        padding: 1rem 0;
+    }
+
+    .slider-container input[type="range"] {
+        width: 100%;
+        height: 12px;
+        border-radius: 10px;
+        background: linear-gradient(to right, #4a5568, #2d3748);
+        outline: none;
+        -webkit-appearance: none;
+        appearance: none;
+        cursor: pointer;
+        box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        border: 1px solid #4a5568;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        transition: all 0.3s ease;
+        border: 3px solid #2d3748;
+    }
+
+    .slider-container input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.5);
+    }
+
+    .slider-container input[type="range"]::-moz-range-thumb {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        cursor: pointer;
+        border: 3px solid #2d3748;
+        box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .setting-value-card {
+        font-weight: 700;
+        color: #667eea;
+        text-align: center;
+        font-size: 1.6rem;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border: 2px solid #667eea;
+        align-self: center;
+        min-width: 100px;
+    }
+
+    /* File Selected Card */
+    .file-selected-card {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        padding: 2rem;
+        margin: 2rem;
+        background: rgba(102, 126, 234, 0.9);
+        border-radius: 20px;
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        border: 2px solid rgba(102, 126, 234, 0.5);
+    }
+
+    .file-icon {
+        font-size: 3rem;
+        color: #4caf50;
+        filter: drop-shadow(0 4px 8px rgba(76, 175, 80, 0.3));
+    }
+
+    .file-details {
+        flex: 1;
+        text-align: left;
+    }
+
+    .file-details .file-name {
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+        font-size: 1.2rem;
+    }
+
+    .file-details .file-size {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 1rem;
+    }
+
+    .remove-file-btn {
+        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+    }
+
+    .remove-file-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+    }
+
+    /* Upload Actions */
+    .upload-actions {
+        padding: 2rem 3rem 3rem;
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border-top: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .action-buttons {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .navigation-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .btn-nav {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-nav:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-nav:nth-child(1) {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-nav:nth-child(1):hover {
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-nav:nth-child(2) {
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-nav:nth-child(2):hover {
+        box-shadow: 0 8px 25px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-nav:nth-child(3) {
+        background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+        box-shadow: 0 4px 15px rgba(253, 126, 20, 0.4);
+    }
+
+    .btn-nav:nth-child(3):hover {
+        box-shadow: 0 8px 25px rgba(253, 126, 20, 0.4);
+    }
+
+    .btn-analyze {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 1.5rem 3rem;
+        border-radius: 50px;
+        font-size: 1.2rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        display: inline-flex;
+        align-items: center;
+        gap: 1rem;
+        min-width: 200px;
+        justify-content: center;
+    }
+
+    .btn-analyze:hover:not(:disabled) {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(102, 126, 234, 0.5);
+    }
+
+    .btn-analyze:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .btn-enabled {
+        opacity: 1 !important;
+        cursor: pointer !important;
+    }
+
+    /* Results Section */
+    .results-section {
+        margin-top: 2rem;
+    }
+
+    .results-card {
+        background: #2d2d2d;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        border: 1px solid #404040;
+    }
+
+    .results-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 3rem;
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+    }
+
+    .results-actions {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .btn-save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 1.5rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.5);
+    }
+
+    .results-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #e0e0e0;
+    }
+
+    .btn-close {
+        background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(244, 67, 54, 0.4);
+    }
+
+    .btn-close:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(244, 67, 54, 0.5);
+    }
+
+    .results-content {
+        padding: 3rem;
+    }
+
+    /* Analysis Results Styles */
+    .analysis-summary {
+        margin-bottom: 2rem;
+    }
+
+    .summary-card {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid #4a5568;
+    }
+
+    .summary-card h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .summary-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #4a5568;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        border: 1px solid #667eea;
+    }
+
+    .stat-label {
+        font-weight: 600;
+        color: #b0b0b0;
+    }
+
+    .stat-value {
+        font-weight: 700;
+        color: #667eea;
+        font-size: 1.2rem;
+    }
+
+    .result-image-container {
+        margin-bottom: 2rem;
+    }
+
+    .result-image-container h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .result-image-wrapper {
+        text-align: center;
+        background: #3a3a3a;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #4a5568;
+    }
+
+    .result-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .tumors-detailed {
+        margin-bottom: 2rem;
+    }
+
+    .tumors-detailed h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .tumors-list {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    .tumor-item {
+        background: #3a3a3a;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #667eea;
+        transition: all 0.3s ease;
+    }
+
+    .tumor-item:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        border-color: #667eea;
+    }
+
+    .tumor-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid rgba(102, 126, 234, 0.1);
+    }
+
+    .tumor-header h5 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin: 0;
+    }
+
+    .confidence-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+
+    .tumor-details {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.8rem 1rem;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        border-radius: 10px;
+        border: 1px solid #667eea;
+    }
+
+    .detail-label {
+        font-weight: 600;
+        color: #b0b0b0;
+    }
+
+    .detail-value {
+        font-weight: 700;
+        color: #e0e0e0;
+    }
+
+    .recommendations {
+        margin-bottom: 2rem;
+    }
+
+    .recommendations h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .recommendations-list {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .recommendation-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #2d5a3d 0%, #1a3d2e 100%);
+        border-radius: 15px;
+        border: 1px solid #28a745;
+        color: #90ee90;
+        font-weight: 600;
+    }
+
+    .recommendation-item i {
+        color: #28a745;
+        font-size: 1.2rem;
+    }
+
+    .error-message {
+        text-align: center;
+        padding: 3rem;
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        border-radius: 20px;
+        border: 1px solid rgba(220, 53, 69, 0.2);
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        color: #dc3545;
+        margin-bottom: 1.5rem;
+    }
+
+    .error-message h4 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #721c24;
+        margin-bottom: 1rem;
+    }
+
+    .error-message p {
+        font-size: 1.1rem;
+        color: #721c24;
+        margin-bottom: 2rem;
+    }
+
+    .btn-retry {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.8rem;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+    }
+
+    /* History Section */
+    .history-section {
+        margin-top: 2rem;
+    }
+
+    .history-card {
+        background: #2d2d2d;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        border: 1px solid #404040;
+    }
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 3rem;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+
+    .history-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .history-content {
+        padding: 3rem;
+    }
+
+    .history-loading {
+        text-align: center;
+        padding: 3rem;
+        color: #b0b0b0;
+    }
+
+    .history-loading i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #28a745;
+    }
+
+    .analyses-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 2rem;
+    }
+
+    .analysis-card {
+        background: #3a3a3a;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #28a745;
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .analysis-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        border-color: #28a745;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        border-bottom: 1px solid #28a745;
+    }
+
+    .analysis-id {
+        font-weight: 700;
+        color: #e0e0e0;
+        font-size: 1.1rem;
+    }
+
+    .status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .status.positive {
+        background: linear-gradient(135deg, #5a2d2d 0%, #3d1a1a 100%);
+        color: #ff6b6b;
+    }
+
+    .status.negative {
+        background: linear-gradient(135deg, #2d5a3d 0%, #1a3d2e 100%);
+        color: #90ee90;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .file-row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .file-row i {
+        color: #28a745;
+        font-size: 1.2rem;
+    }
+
+    .file-name {
+        font-weight: 600;
+        color: #e0e0e0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .meta-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .meta-label {
+        font-size: 0.8rem;
+        color: #b0b0b0;
+        font-weight: 600;
+    }
+
+    .meta-value {
+        font-weight: 700;
+        color: #e0e0e0;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    }
+
+    .btn-view,
+    .btn-delete {
+        flex: 1;
+        padding: 0.8rem 1rem;
+        border: none;
+        border-radius: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-view {
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(23, 162, 184, 0.4);
+    }
+
+    .btn-view:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(23, 162, 184, 0.5);
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+    }
+
+    .btn-delete:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.5);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: #b0b0b0;
+    }
+
+    .empty-state i {
+        font-size: 4rem;
+        color: #28a745;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state h4 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        color: #e0e0e0;
+    }
+
+    .empty-state p {
+        font-size: 1.1rem;
+        line-height: 1.65;
+        color: #b0b0b0;
+    }
+
+    /* Statistics Section */
+    .statistics-section {
+        margin-top: 2rem;
+    }
+
+    .statistics-card {
+        background: #2d2d2d;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        border: 1px solid #404040;
+    }
+
+    .statistics-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 3rem;
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        color: white;
+    }
+
+    .statistics-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+    }
+
+    .statistics-content {
+        padding: 3rem;
+    }
+
+    .statistics-loading {
+        text-align: center;
+        padding: 3rem;
+        color: #b0b0b0;
+    }
+
+    .statistics-loading i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #17a2b8;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .stats-card {
+        background: #3a3a3a;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #17a2b8;
+        transition: all 0.3s ease;
+        text-align: center;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+        border-color: #17a2b8;
+    }
+
+    .card-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        color: white;
+        font-size: 2rem;
+        box-shadow: 0 10px 30px rgba(23, 162, 184, 0.3);
+    }
+
+    .card-content h3 {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #17a2b8;
+    }
+
+    .stat-number.positive {
+        color: #dc3545;
+    }
+
+    .stat-number.negative {
+        color: #28a745;
+    }
+
+    .chart-container {
+        background: #3a3a3a;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #17a2b8;
+    }
+
+    /* Advanced Settings Section */
+    .advanced-settings-section {
+        margin-top: 2rem;
+    }
+
+    .advanced-settings-card {
+        background: #2d2d2d;
+        border-radius: 24px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+        border: 1px solid #404040;
+    }
+
+    .advanced-settings-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 2rem 3rem;
+        background: linear-gradient(135deg, #fd7e14 0%, #e83e8c 100%);
+        color: white;
+    }
+
+    .advanced-settings-header h3 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        margin: 0;
+        color: white;
+    }
+
+    .advanced-settings-content {
+        padding: 3rem;
+    }
+
+    .settings-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .setting-group {
+        background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+        border-radius: 20px;
+        padding: 2rem;
+        border: 1px solid #fd7e14;
+    }
+
+    .setting-group h4 {
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: #e0e0e0;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+
+    .setting-item {
+        margin-bottom: 1.5rem;
+    }
+
+    .setting-item label {
+        display: block;
+        font-weight: 600;
+        color: #e0e0e0;
+        margin-bottom: 0.5rem;
+    }
+
+    .setting-item input[type="range"] {
+        width: 100%;
+        margin-bottom: 0.5rem;
+        background: linear-gradient(to right, #4a5568, #2d3748);
+        border: 1px solid #fd7e14;
+    }
+
+    .setting-item select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 2px solid #fd7e14;
+        border-radius: 10px;
+        background: #4a5568;
+        font-weight: 600;
+        color: #e0e0e0;
+    }
+
+    .setting-item input[type="checkbox"] {
+        margin-left: 0.5rem;
+        accent-color: #fd7e14;
+    }
+
+    .settings-actions {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+    }
+
+    .btn-save-settings,
+    .btn-reset-settings {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 25px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+    }
+
+    .btn-save-settings {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
+    }
+
+    .btn-save-settings:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(40, 167, 69, 0.5);
+    }
+
+    .btn-reset-settings {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.4);
+    }
+
+    .btn-reset-settings:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(220, 53, 69, 0.5);
+    }
+
+    /* Notifications */
+    .notification {
+        position: fixed;
+        top: 2rem;
+        right: 2rem;
+        background: #3a3a3a;
+        border-radius: 15px;
+        padding: 1rem 1.5rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        border: 1px solid #4a5568;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        z-index: 1000;
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+        color: #e0e0e0;
+    }
+
+    .notification.show {
+        transform: translateX(0);
+    }
+
+    .notification-success {
+        border-left: 4px solid #28a745;
+        background: #2d5a3d;
+    }
+
+    .notification-success i {
+        color: #28a745;
+    }
+
+    .notification-error {
+        border-left: 4px solid #dc3545;
+        background: #5a2d2d;
+    }
+
+    .notification-error i {
+        color: #dc3545;
+    }
+
+    .notification-info {
+        border-left: 4px solid #17a2b8;
+        background: #2d5a5a;
+    }
+
+    .notification-info i {
+        color: #17a2b8;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1024px) {
+        .upload-main {
+            grid-template-columns: 1fr;
+            gap: 2rem;
+        }
+
+        .upload-header {
+            flex-direction: column;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        .header-icon {
+            width: 60px;
+            height: 60px;
+            font-size: 2rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .analyze-container {
+            padding: 1rem;
+        }
+
+        .upload-header {
+            padding: 2rem 1.5rem 1.5rem;
+        }
+
+        .upload-main {
+            padding: 1.5rem;
+        }
+
+        .upload-actions {
+            padding: 1.5rem;
+        }
+
+        .btn-analyze {
+            padding: 1.2rem 2rem;
+            font-size: 1.1rem;
+            min-width: 180px;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .upload-header {
+            padding: 1.5rem 1rem 1rem;
+        }
+
+        .header-content h2 {
+            font-size: 1.8rem;
+        }
+
+        .header-content p {
+            font-size: 1rem;
+        }
+
+        .upload-main {
+            padding: 1rem;
+            gap: 1.5rem;
+        }
+
+        .upload-card-inner {
+            padding: 2rem 1rem;
+        }
+
+        .upload-content h3 {
+            font-size: 1.5rem;
+        }
+
+        .upload-content p {
+            font-size: 1rem;
+        }
+
+        .upload-hint-card {
+            padding: 0.8rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .settings-header-card {
+            padding: 1.5rem;
+        }
+
+        .settings-icon {
+            font-size: 2rem;
+        }
+
+        .settings-header-card h4 {
+            font-size: 1.2rem;
+        }
+
+        .setting-card {
+            padding: 1.5rem;
+        }
+
+        .setting-card-header .setting-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+
+        .setting-info label {
+            font-size: 1rem;
+        }
+
+        .setting-description {
+            font-size: 0.8rem;
+        }
+
+        .setting-value-card {
+            font-size: 1.4rem;
+            padding: 0.8rem 1.5rem;
+            min-width: 80px;
+        }
+
+        .btn-analyze {
+            padding: 1rem 1.5rem;
+            font-size: 1rem;
+            min-width: 160px;
+        }
+
+        .results-header {
+            padding: 1.5rem;
+        }
+
+        .results-header h3 {
+            font-size: 1.5rem;
+        }
+
+        .results-content {
+            padding: 2rem;
+        }
+
+        .summary-stats {
+            grid-template-columns: 1fr;
+        }
+
+        .tumor-item {
+            padding: 1.5rem;
+        }
+
+        .tumor-header h5 {
+            font-size: 1.1rem;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            gap: 0.5rem;
+            text-align: center;
+        }
+
+        .recommendation-item {
+            padding: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .error-message {
+            padding: 2rem;
+        }
+
+        .error-icon {
+            font-size: 3rem;
+        }
+
+        .error-message h4 {
+            font-size: 1.5rem;
+        }
+
+        .error-message p {
+            font-size: 1rem;
+        }
+    }
+</style>
+{% endblock %}

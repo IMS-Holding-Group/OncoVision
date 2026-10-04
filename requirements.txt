@@ -1,0 +1,37 @@
+# OncoVision Requirements
+# Core dependencies
+Flask==2.3.3
+Werkzeug==2.3.7
+Jinja2==3.1.2
+
+# Machine Learning and Computer Vision
+ultralytics==8.0.196
+torch>=1.9.0
+torchvision>=0.10.0
+opencv-python==4.8.1.78
+numpy==1.24.3
+Pillow==10.0.1
+
+# Data visualization
+matplotlib==3.7.2
+seaborn==0.12.2
+
+# Configuration
+PyYAML==6.0.1
+
+# Optional: Roboflow integration
+# roboflow==1.1.8
+
+# Optional GPU support (uncomment if using CUDA)
+# torch-audio
+# torchaudio
+
+# Development and Testing (optional)
+# pytest==7.4.2
+# pytest-flask==1.2.0
+# coverage==7.3.1
+
+# Web interface enhancements (optional)
+# Flask-WTF==1.1.1
+# Flask-Login==0.6.3
+# Flask-Mail==0.9.1

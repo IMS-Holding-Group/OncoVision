@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}OncoVision - الرئيسية{% endblock %}
+{% block page_title %}home.welcome{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="fade-in" style="padding: 4rem 0; text-align: center;">
+    <div class="card medical" style="max-width: 800px; margin: 0 auto;">
+        <h1 style="font-size: 3rem; font-weight: 700; margin-bottom: 1rem; background: var(--gradient-primary); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;" data-translate="home.welcome">مرحباً بك في OncoVision</h1>
+        
+        <p style="font-size: 1.2rem; color: var(--text-secondary); margin-bottom: 2rem;" data-translate="home.description">نظام متقدم لكشف أورام الثدي باستخدام تقنيات الذكاء الاصطناعي والتعلم العميق</p>
+        
+        <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-bottom: 2rem;">
+            {% if session.user_id %}
+                <a href="{{ url_for('analyze') }}" class="btn btn-primary pulse">
+                    <i class="fas fa-search"></i>
+                    <span data-translate="home.start.analysis">بدء التحليل</span>
+                </a>
+                <a href="{{ url_for('history') }}" class="btn btn-secondary">
+                    <i class="fas fa-history"></i>
+                    <span data-translate="home.view.history">عرض السجل</span>
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-primary pulse">
+                    <i class="fas fa-sign-in-alt"></i>
+                    <span data-translate="login.title">تسجيل الدخول</span>
+                </a>
+            {% endif %}
+        </div>
+        
+        {% if not model_loaded %}
+            <div class="alert alert-warning">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span data-translate="error.analysis.failed">تحذير: النموذج غير محمل. بعض الميزات قد لا تعمل.</span>
+            </div>
+        {% endif %}
+    </div>
+</section>
+
+<!-- Features Section -->
+<section style="padding: 4rem 0;">
+    <h2 style="text-align: center; font-size: 2.5rem; font-weight: 700; margin-bottom: 3rem; color: var(--text-primary);" data-translate="home.features.title">المميزات الرئيسية</h2>
+    
+    <div class="stats-grid">
+        <div class="card tech slide-in-left">
+            <div class="tech-icon">
+                <i class="fas fa-brain"></i>
+            </div>
+            <h3 data-translate="home.features.ai">ذكاء اصطناعي متقدم</h3>
+            <p data-translate="home.features.ai.desc">خوارزميات YOLOv8 المتطورة لكشف الأورام بدقة عالية</p>
+        </div>
+        
+        <div class="card medical slide-in-right">
+            <div class="medical-icon">
+                <i class="fas fa-clock"></i>
+            </div>
+            <h3 data-translate="home.features.fast">تحليل سريع</h3>
+            <p data-translate="home.features.fast.desc">نتائج فورية خلال ثوانٍ معدودة</p>
+        </div>
+        
+        <div class="card tech slide-in-left">
+            <div class="tech-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 data-translate="home.features.accurate">دقة عالية</h3>
+            <p data-translate="home.features.accurate.desc">معدل دقة يصل إلى 95% في كشف الأورام</p>
+        </div>
+        
+        <div class="card medical slide-in-right">
+            <div class="medical-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h3 data-translate="home.features.secure">آمان تام</h3>
+            <p data-translate="home.features.secure.desc">حماية كاملة لبيانات المرضى والصور الطبية</p>
+        </div>
+    </div>
+</section>
+
+<!-- Medical Disclaimer -->
+<section style="padding: 4rem 0;">
+    <div class="card" style="max-width: 600px; margin: 0 auto; text-align: center; border-left: 4px solid var(--warning);">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;">
+            <i class="fas fa-exclamation-triangle" style="font-size: 2rem; color: var(--warning);"></i>
+            <h3 style="color: var(--warning); margin: 0;" data-translate="disclaimer.title">إخلاء مسؤولية طبية</h3>
+        </div>
+        <p style="color: var(--text-secondary); line-height: 1.8;" data-translate="disclaimer.content">
+            هذا النظام مخصص للمساعدة في التشخيص فقط وليس بديلاً عن الاستشارة الطبية المتخصصة. جميع النتائج يجب أن تُراجع من قبل طبيب مختص. لا يتحمل النظام أي مسؤولية عن القرارات الطبية المتخذة بناءً على هذه النتائج.
+        </p>
+        <div style="margin-top: 2rem;">
+            <button class="btn btn-secondary" data-translate="disclaimer.understand">أفهم وأوافق</button>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Enhanced animations and interactions
+document.addEventListener('DOMContentLoaded', function() {
+    // Intersection Observer for scroll animations
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+    
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.style.opacity = '1';
+                entry.target.style.transform = 'translateY(0)';
+            }
+        });
+    }, observerOptions);
+    
+    // Observe all animated elements
+    document.querySelectorAll('.fade-in, .slide-in-left, .slide-in-right').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'translateY(30px)';
+        el.style.transition = 'all 0.6s ease-out';
+        observer.observe(el);
+    });
+    
+    // Add hover effects to cards
+    document.querySelectorAll('.card').forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-8px) scale(1.02)';
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0) scale(1)';
+        });
+    });
+    
+    // Pulse animation for primary buttons
+    document.querySelectorAll('.btn-primary').forEach(btn => {
+        btn.addEventListener('mouseenter', function() {
+            this.classList.add('glow');
+        });
+        
+        btn.addEventListener('mouseleave', function() {
+            this.classList.remove('glow');
+        });
+    });
+    
+    // Header scroll effect
+    const header = document.getElementById('header');
+    if (header) {
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 100) {
+                header.classList.add('scrolled');
+            } else {
+                header.classList.remove('scrolled');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

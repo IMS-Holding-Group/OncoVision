@@ -1,0 +1,460 @@
+{% extends "base.html" %}
+
+{% block title %}OncoVision - <span data-translate="dashboard.title">لوحة التحكم</span>{% endblock %}
+
+{% block content %}
+<section class="dashboard-section">
+    <div class="container">
+        <div class="page-header">
+            <h1 data-translate="dashboard.title">لوحة التحكم</h1>
+            <p id="welcome-text">مرحباً {{ session.username }}، إليك ملخص نشاط النظام</p>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-images"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.total_analyses or 0 }}</div>
+                    <div class="stat-label" data-translate="dashboard.total_analyses">إجمالي التحليلات</div>
+                </div>
+            </div>
+
+            <div class="stat-card tumor-detected">
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.tumor_detected_count or 0 }}</div>
+                    <div class="stat-label" data-translate="dashboard.tumor_detected">أورام مكتشفة</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-crosshairs"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ stats.total_detections or 0 }}</div>
+                    <div class="stat-label" data-translate="dashboard.total_detections">إجمالي الاكتشافات</div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon">
+                    <i class="fas fa-percentage"></i>
+                </div>
+                <div class="stat-content">
+                    <div class="stat-number">{{ "%.1f"|format((stats.avg_confidence or 0) * 100) }}%</div>
+                    <div class="stat-label" data-translate="dashboard.avg_confidence">متوسط الثقة</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="quick-actions">
+            <h2 data-translate="dashboard.quick_actions">إجراءات سريعة</h2>
+            <div class="actions-grid">
+                <a href="{{ url_for('analyze') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <h3 data-translate="dashboard.new_analysis">تحليل جديد</h3>
+                    <p data-translate="dashboard.new_analysis.desc">قم برفع صورة ماموجرام جديدة للتحليل</p>
+                </a>
+
+                <a href="{{ url_for('history') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-history"></i>
+                    </div>
+                    <h3 data-translate="dashboard.view_history">عرض السجل</h3>
+                    <p data-translate="dashboard.view_history.desc">استعرض جميع التحليلات السابقة</p>
+                </a>
+
+                <a href="{{ url_for('statistics') }}" class="action-card">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3 data-translate="dashboard.statistics">الإحصائيات</h3>
+                    <p data-translate="dashboard.statistics.desc">عرض تقارير وإحصائيات مفصلة</p>
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Analyses -->
+        <div class="recent-analyses">
+            <div class="section-header">
+                <h2 data-translate="dashboard.recent_analyses">التحليلات الأخيرة</h2>
+                <a href="{{ url_for('history') }}" class="view-all-link">
+                    <span data-translate="dashboard.view_all">عرض الكل</span> <i class="fas fa-arrow-left"></i>
+                </a>
+            </div>
+
+            {% if recent_analyses %}
+            <div class="analyses-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th data-translate="dashboard.image_name">اسم الصورة</th>
+                            <th data-translate="dashboard.date">التاريخ</th>
+                            <th data-translate="dashboard.result">النتيجة</th>
+                            <th data-translate="dashboard.detections_count">عدد الاكتشافات</th>
+                            <th data-translate="dashboard.max_confidence">أعلى ثقة</th>
+                            <th data-translate="dashboard.actions">الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analysis in recent_analyses %}
+                        <tr>
+                            <td>
+                                <div class="image-info">
+                                    <i class="fas fa-file-image"></i>
+                                    <span>{{ analysis.image_name }}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="date-time">{{ analysis.timestamp if analysis.timestamp else
+                                    analysis.created_at[:19].replace('T', ' ') if analysis.created_at else 'غير محدد'
+                                    }}</span>
+                            </td>
+                            <td>
+                                {% if analysis.tumor_detected %}
+                                <span class="status-badge tumor-detected">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <span data-translate="dashboard.status.tumor">ورم مكتشف</span>
+                                </span>
+                                {% else %}
+                                <span class="status-badge normal">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span data-translate="dashboard.status.normal">طبيعي</span>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="detection-count">{{ analysis.num_detections }}</span>
+                            </td>
+                            <td>
+                                <span class="confidence-value">{{ "%.1f"|format((analysis.max_confidence or 0) * 100)
+                                    }}%</span>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="{{ url_for('analysis_detail', analysis_id=analysis.id) }}"
+                                        class="btn-small btn-primary" title="عرض التفاصيل">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <h3 data-translate="dashboard.empty.title">لا توجد تحليلات بعد</h3>
+                <p data-translate="dashboard.empty.desc">ابدأ بتحليل أول صورة ماموجرام</p>
+                <a href="{{ url_for('analyze') }}" class="btn btn-primary">
+                    <i class="fas fa-search"></i>
+                    <span data-translate="dashboard.start_analysis">بدء التحليل</span>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .dashboard-section {
+        padding: 2rem 0;
+    }
+
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: var(--white);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: var(--transition);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+    }
+
+    .stat-card.tumor-detected {
+        border-left: 4px solid var(--error);
+    }
+
+    .stat-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gradient-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--white);
+        flex-shrink: 0;
+    }
+
+    .stat-number {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--primary-teal);
+        line-height: 1;
+    }
+
+    .stat-label {
+        color: var(--gray);
+        font-size: 0.9rem;
+        margin-top: 0.25rem;
+    }
+
+    .quick-actions {
+        margin-bottom: 3rem;
+    }
+
+    .actions-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1.5rem;
+    }
+
+    .action-card {
+        background: var(--white);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        text-decoration: none;
+        color: inherit;
+        transition: var(--transition);
+        text-align: center;
+    }
+
+    .action-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-lg);
+        color: inherit;
+    }
+
+    .action-icon {
+        width: 60px;
+        height: 60px;
+        background: var(--gradient-primary);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: var(--white);
+        margin: 0 auto 1rem;
+    }
+
+    .action-card h3 {
+        color: var(--primary-teal);
+        margin-bottom: 0.5rem;
+    }
+
+    .action-card p {
+        color: var(--gray);
+        font-size: 0.9rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .view-all-link {
+        color: var(--primary-teal);
+        text-decoration: none;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: var(--transition);
+    }
+
+    .view-all-link:hover {
+        color: var(--primary-pink);
+    }
+
+    .analyses-table {
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+        overflow: hidden;
+    }
+
+    .analyses-table table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .analyses-table th,
+    .analyses-table td {
+        padding: 1rem;
+        text-align: right;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .analyses-table th {
+        background: var(--light-gray);
+        font-weight: 600;
+        color: var(--primary-teal);
+    }
+
+    .image-info {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .image-info i {
+        color: var(--primary-teal);
+    }
+
+    .date-time {
+        font-size: 0.9rem;
+        color: var(--gray);
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .status-badge.tumor-detected {
+        background: rgba(220, 53, 69, 0.1);
+        color: var(--error);
+    }
+
+    .status-badge.normal {
+        background: rgba(40, 167, 69, 0.1);
+        color: var(--success);
+    }
+
+    .detection-count {
+        font-weight: 600;
+        color: var(--primary-teal);
+    }
+
+    .confidence-value {
+        font-weight: 600;
+        color: var(--primary-teal);
+    }
+
+    .btn-small {
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        border-radius: 6px;
+        min-width: auto;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        background: var(--white);
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .empty-icon {
+        font-size: 4rem;
+        color: var(--gray);
+        margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+        color: var(--primary-teal);
+        margin-bottom: 0.5rem;
+    }
+
+    .empty-state p {
+        color: var(--gray);
+        margin-bottom: 2rem;
+    }
+
+    @media (max-width: 768px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .actions-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .analyses-table {
+            overflow-x: auto;
+        }
+
+        .analyses-table table {
+            min-width: 600px;
+        }
+    }
+</style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        try {
+            const welcome = document.getElementById('welcome-text');
+            const name = `{{ session.username }}`;
+            if (!welcome) return;
+
+            function applyWelcome() {
+                if (!window.languageManager) return false;
+                const t = window.translate('dashboard.welcome', { name });
+                if (t && t !== 'dashboard.welcome') {
+                    welcome.textContent = t;
+                }
+                return true;
+            }
+
+            // Attempt immediately; if LM not ready yet, retry briefly
+            if (!applyWelcome()) {
+                let attempts = 0;
+                const timer = setInterval(() => {
+                    attempts++;
+                    if (applyWelcome() || attempts > 10) {
+                        clearInterval(timer);
+                    }
+                }, 50);
+            }
+
+            window.addEventListener('languageChanged', () => applyWelcome());
+        } catch (e) { /* ignore */ }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,802 @@
+{% extends "base.html" %}
+
+{% block title %}<span data-translate="stats.title">الإحصائيات والتقارير</span> - OncoVision{% endblock %}
+
+{% block content %}
+<section class="statistics-page">
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 data-translate="stats.title">الإحصائيات والتقارير</h1>
+            <p data-translate="stats.subtitle">نظرة شاملة على أداء النظام ونتائج التحليلات</p>
+        </div>
+
+        <!-- Statistics Cards Grid -->
+        <div class="stats-cards-grid">
+            <!-- Total Analyses Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.total.analyses">إجمالي التحليلات</h3>
+                        <p data-translate="stats.total.desc">جميع التحليلات المنجزة</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number">{{ detection_stats|length if detection_stats else 0 }}</span>
+                    <span class="stat-unit">تحليل</span>
+                </div>
+            </div>
+
+            <!-- Positive Cases Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon positive">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.positive.cases">الحالات الإيجابية</h3>
+                        <p data-translate="stats.positive.desc">تحليلات اكتشفت أورام</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number positive">
+                        {% set positive_count = detection_stats|selectattr('tumor_detected', 'equalto', 1)|list|length
+                        %}
+                        {{ positive_count if detection_stats else 0 }}
+                    </span>
+                    <span class="stat-unit">حالة</span>
+                </div>
+            </div>
+
+            <!-- Negative Cases Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon negative">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.negative.cases">الحالات السليمة</h3>
+                        <p data-translate="stats.negative.desc">تحليلات لم تكتشف أورام</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number negative">
+                        {% set negative_count = detection_stats|selectattr('tumor_detected', 'equalto', 0)|list|length
+                        %}
+                        {{ negative_count if detection_stats else 0 }}
+                    </span>
+                    <span class="stat-unit">حالة</span>
+                </div>
+            </div>
+
+            <!-- Average Processing Time Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.processing.time">متوسط وقت المعالجة</h3>
+                        <p data-translate="stats.processing.desc">الوقت المطلوب للتحليل</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number">
+                        {% if detection_stats %}
+                        {% set valid_times = detection_stats|selectattr('processing_time', 'number')|list %}
+                        {% if valid_times %}
+                        {% set total_time = valid_times|map(attribute='processing_time')|sum %}
+                        {% set count = valid_times|length %}
+                        {{ "%.2f"|format(total_time / count) }}
+                        {% else %}
+                        0.00
+                        {% endif %}
+                        {% else %}
+                        0.00
+                        {% endif %}
+                    </span>
+                    <span class="stat-unit">ثانية</span>
+                </div>
+            </div>
+
+            <!-- Success Rate Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon success">
+                        <i class="fas fa-percentage"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.success.rate">معدل النجاح</h3>
+                        <p data-translate="stats.success.desc">نسبة التحليلات المكتملة</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number success">
+                        {% if detection_stats %}
+                        {% set total = detection_stats|length %}
+                        {% set completed = detection_stats|selectattr('processing_time', 'number')|list|length %}
+                        {% if total > 0 %}
+                        {{ "%.1f"|format((completed / total) * 100) }}
+                        {% else %}
+                        0.0
+                        {% endif %}
+                        {% else %}
+                        0.0
+                        {% endif %}
+                    </span>
+                    <span class="stat-unit">%</span>
+                </div>
+            </div>
+
+            <!-- Average Confidence Card -->
+            <div class="stat-card">
+                <div class="stat-card-header">
+                    <div class="stat-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 data-translate="stats.avg.confidence">متوسط الثقة</h3>
+                        <p data-translate="stats.avg.confidence.desc">مستوى الثقة في النتائج</p>
+                    </div>
+                </div>
+                <div class="stat-value">
+                    <span class="stat-number">
+                        {% if detection_stats %}
+                        {% set valid_confidences = detection_stats|selectattr('max_confidence', 'number')|list %}
+                        {% if valid_confidences %}
+                        {% set total_conf = valid_confidences|map(attribute='max_confidence')|sum %}
+                        {% set count = valid_confidences|length %}
+                        {{ "%.1f"|format((total_conf / count) * 100) }}
+                        {% else %}
+                        0.0
+                        {% endif %}
+                        {% else %}
+                        0.0
+                        {% endif %}
+                    </span>
+                    <span class="stat-unit">%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 data-translate="stats.daily.analyses">التحليلات اليومية</h3>
+                    <p data-translate="stats.daily.desc">عدد التحليلات المنجزة يومياً</p>
+                </div>
+                <div class="chart-content">
+                    <canvas id="dailyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <h3 data-translate="stats.results.distribution">توزيع النتائج</h3>
+                    <p data-translate="stats.distribution.desc">نسبة الحالات الإيجابية والسلبية</p>
+                </div>
+                <div class="chart-content">
+                    <canvas id="resultsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity Section -->
+        {% if recent_activity %}
+        <div class="recent-activity-card">
+            <div class="card-header">
+                <h3 data-translate="stats.recent.activity">النشاط الأخير</h3>
+                <p data-translate="stats.recent.desc">آخر التحليلات المنجزة</p>
+            </div>
+            <div class="activity-list">
+                {% for activity in recent_activity %}
+                <div class="activity-item">
+                    <div class="activity-icon {{ 'positive' if activity.tumor_detected else 'negative' }}">
+                        <i
+                            class="fas fa-{{ 'exclamation-triangle' if activity.tumor_detected else 'check-circle' }}"></i>
+                    </div>
+                    <div class="activity-content">
+                        <div class="activity-title">{{ activity.image_name }}</div>
+                        <div class="activity-meta">
+                            <span class="activity-result {{ 'positive' if activity.tumor_detected else 'negative' }}">
+                                <span
+                                    data-translate="stats.{{ 'positive' if activity.tumor_detected else 'negative' }}.result">
+                                    {{ 'إيجابي' if activity.tumor_detected else 'سلبي' }}
+                                </span>
+                            </span>
+                            <span class="activity-confidence">
+                                {% if activity.max_confidence %}
+                                {{ "%.1f"|format(activity.max_confidence * 100) }}%
+                                {% else %}
+                                N/A
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="activity-time">
+                        {% if activity.created_at %}
+                        {% if activity.created_at is string %}
+                        {% set date_str = activity.created_at.split(' ')[0] if ' ' in activity.created_at else
+                        activity.created_at %}
+                        {% set date_str = date_str.replace('-', '/') %}
+                        {% else %}
+                        {% set date_str = activity.created_at.strftime('%Y/%m/%d') %}
+                        {% endif %}
+                        {{ date_str }}
+                        {% else %}
+                        N/A
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Summary Section -->
+        {% if summary %}
+        <div class="summary-card">
+            <div class="card-header">
+                <h3 data-translate="stats.summary.title">ملخص التحليلات</h3>
+                <p data-translate="stats.summary.desc">إحصائيات مفصلة للتحليلات</p>
+            </div>
+            <div class="summary-content">
+                {% for item in summary %}
+                <div class="summary-item">
+                    <div class="summary-date">{{ item.analysis_date.replace('-', '/') if item.analysis_date else 'N/A'
+                        }}</div>
+                    <div class="summary-stats">
+                        <div class="summary-stat">
+                            <span class="stat-label" data-translate="stats.total">إجمالي</span>
+                            <span class="stat-value">{{ item.total_analyses }}</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label" data-translate="stats.positive">إيجابي</span>
+                            <span class="stat-value positive">{{ item.positive_cases }}</span>
+                        </div>
+                        <div class="summary-stat">
+                            <span class="stat-label" data-translate="stats.negative">سلبي</span>
+                            <span class="stat-value negative">{{ item.negative_cases }}</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</section>
+
+<style>
+    /* Statistics Page Styles - Dark Mode */
+    .statistics-page {
+        background: #1a1a1a;
+        min-height: 100vh;
+        padding: 2rem 0;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 1rem;
+    }
+
+    /* Page Header */
+    .page-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+        color: #e0e0e0;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+
+    .page-header p {
+        color: #b0b0b0;
+        font-size: 1.1rem;
+    }
+
+    /* Statistics Cards Grid */
+    .stats-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .stat-card {
+        background: #2d2d2d;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #404040;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        border-color: #667eea;
+    }
+
+    .stat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        color: #e0e0e0;
+        font-size: 1.2rem;
+    }
+
+    .stat-icon.positive {
+        background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        color: white;
+    }
+
+    .stat-icon.negative {
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        color: white;
+    }
+
+    .stat-icon.success {
+        background: linear-gradient(135deg, #3182ce 0%, #2c5282 100%);
+        color: white;
+    }
+
+    .stat-info h3 {
+        color: #e0e0e0;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+    }
+
+    .stat-info p {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .stat-value {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #e0e0e0;
+    }
+
+    .stat-number.positive {
+        color: #e53e3e;
+    }
+
+    .stat-number.negative {
+        color: #38a169;
+    }
+
+    .stat-number.success {
+        color: #3182ce;
+    }
+
+    .stat-unit {
+        color: #b0b0b0;
+        font-size: 1rem;
+        font-weight: 500;
+    }
+
+    /* Charts Section */
+    .charts-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+        gap: 2rem;
+        margin-bottom: 3rem;
+    }
+
+    .chart-card {
+        background: #2d2d2d;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #404040;
+        transition: all 0.3s ease;
+    }
+
+    .chart-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        border-color: #667eea;
+    }
+
+    .chart-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .chart-header h3 {
+        color: #e0e0e0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .chart-header p {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .chart-content {
+        height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .chart-content canvas {
+        max-width: 100%;
+        max-height: 100%;
+    }
+
+    /* Recent Activity Card */
+    .recent-activity-card {
+        background: #2d2d2d;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #404040;
+        margin-bottom: 3rem;
+    }
+
+    .card-header {
+        margin-bottom: 1.5rem;
+    }
+
+    .card-header h3 {
+        color: #e0e0e0;
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .card-header p {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+        margin: 0;
+    }
+
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: #3a3a3a;
+        border-radius: 12px;
+        border: 1px solid #4a5568;
+        transition: all 0.3s ease;
+    }
+
+    .activity-item:hover {
+        background: #4a5568;
+        border-color: #667eea;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+    }
+
+    .activity-icon.positive {
+        background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        color: white;
+    }
+
+    .activity-icon.negative {
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
+        color: white;
+    }
+
+    .activity-content {
+        flex: 1;
+    }
+
+    .activity-title {
+        color: #e0e0e0;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .activity-meta {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+    }
+
+    .activity-result {
+        padding: 0.25rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .activity-result.positive {
+        background: rgba(229, 62, 62, 0.2);
+        color: #e53e3e;
+    }
+
+    .activity-result.negative {
+        background: rgba(56, 161, 105, 0.2);
+        color: #38a169;
+    }
+
+    .activity-confidence {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+    }
+
+    .activity-time {
+        color: #b0b0b0;
+        font-size: 0.9rem;
+    }
+
+    /* Summary Card */
+    .summary-card {
+        background: #2d2d2d;
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        border: 1px solid #404040;
+    }
+
+    .summary-content {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        background: #3a3a3a;
+        border-radius: 12px;
+        border: 1px solid #4a5568;
+    }
+
+    .summary-date {
+        color: #e0e0e0;
+        font-weight: 600;
+    }
+
+    .summary-stats {
+        display: flex;
+        gap: 1.5rem;
+    }
+
+    .summary-stat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .stat-label {
+        color: #b0b0b0;
+        font-size: 0.8rem;
+    }
+
+    .stat-value {
+        color: #e0e0e0;
+        font-weight: 600;
+    }
+
+    .stat-value.positive {
+        color: #e53e3e;
+    }
+
+    .stat-value.negative {
+        color: #38a169;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .stats-cards-grid {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .charts-section {
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+
+        .chart-content {
+            height: 250px;
+        }
+
+        .summary-stats {
+            gap: 1rem;
+        }
+
+        .activity-meta {
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .statistics-page {
+            padding: 1rem 0;
+        }
+
+        .stat-card {
+            padding: 1.5rem;
+        }
+
+        .chart-card {
+            padding: 1.5rem;
+        }
+
+        .recent-activity-card {
+            padding: 1.5rem;
+        }
+
+        .summary-card {
+            padding: 1.5rem;
+        }
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Daily Chart
+        const dailyCtx = document.getElementById('dailyChart').getContext('2d');
+        const dailyChart = new Chart(dailyCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'التحليلات اليومية',
+                    data: [],
+                    borderColor: '#667eea',
+                    backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#b0b0b0'
+                        },
+                        grid: {
+                            color: '#404040'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#b0b0b0'
+                        },
+                        grid: {
+                            color: '#404040'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Results Chart
+        const resultsCtx = document.getElementById('resultsChart').getContext('2d');
+        const resultsChart = new Chart(resultsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['إيجابي', 'سلبي'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#e53e3e', '#38a169'],
+                    borderColor: ['#c53030', '#2f855a'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#e0e0e0'
+                        }
+                    }
+                }
+            }
+        });
+
+        // Update charts with data
+        updateCharts();
+    });
+
+    function updateCharts() {
+        // This would be populated with actual data from the backend
+        // For now, using sample data
+        // Sample data for charts
+        const dailyData = {
+            labels: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'],
+            data: [5, 8, 12, 6, 15, 9, 7]
+        };
+
+        const resultsData = {
+            positive: 6,
+            negative: 4
+        };
+
+        // Update daily chart
+        const dailyChart = Chart.getChart('dailyChart');
+        if (dailyChart) {
+            dailyChart.data.labels = dailyData.labels;
+            dailyChart.data.datasets[0].data = dailyData.data;
+            dailyChart.update();
+        }
+
+        // Update results chart
+        const resultsChart = Chart.getChart('resultsChart');
+        if (resultsChart) {
+            resultsChart.data.datasets[0].data = [resultsData.positive, resultsData.negative];
+            resultsChart.update();
+        }
+    }
+</script>
+{% endblock %}

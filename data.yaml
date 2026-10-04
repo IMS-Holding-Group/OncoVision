@@ -1,0 +1,14 @@
+# OncoVision Data Configuration
+# YOLOv8 data configuration file
+
+path: data/yolo_dataset  # Dataset root directory
+train: train/images      # Training images directory
+val: val/images          # Validation images directory
+test: test/images         # Test images directory
+
+# Number of classes
+nc: 1
+
+# Class names
+names:
+  0: tumor

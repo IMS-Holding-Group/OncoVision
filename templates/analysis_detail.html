@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}تفاصيل التحليل - OncoVision{% endblock %}
+{% block page_title %}detail.title{% endblock %}
+
+{% block content %}
+<section class="analysis-detail">
+    <div class="container">
+        <div class="page-header">
+            <h1><span data-translate="detail.title">تفاصيل التحليل</span> #{{ analysis.id }}</h1>
+            <div>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" data-translate="detail.back">العودة للوحة
+                    التحكم</a>
+                <form method="post" action="{{ url_for('delete_analysis', analysis_id=analysis.id) }}"
+                    style="display:inline; margin-right: .5rem;"
+                    onsubmit="return confirm(window.translate ? window.translate('common.confirm') + '؟' : 'تأكيد الحذف؟');">
+                    <button type="submit" class="btn btn-secondary" data-translate="history.delete">حذف</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="analysis-info">
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3 data-translate="detail.file.info">معلومات الملف</h3>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.file.name">اسم الملف:</span>
+                        <span class="value">{{ analysis.image_name }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.date">تاريخ التحليل:</span>
+                        <span class="value">
+                            {% if analysis.created_at.strftime is defined %}
+                            {{ analysis.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                            {% else %}
+                            {{ analysis.created_at }}
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.processing">وقت المعالجة:</span>
+                        <span class="value">
+                            {% if analysis.processing_time is not none %}
+                            {{ "%.2f"|format(analysis.processing_time) }} ثانية
+                            {% else %}
+                            --
+                            {% endif %}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <h3 data-translate="detail.results">نتائج التحليل</h3>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.tumor.status">حالة الورم:</span>
+                        <span class="value {{ 'positive' if analysis.tumor_detected else 'negative' }}">
+                            {% if analysis.tumor_detected %}
+                            <span data-translate="stats.tumor.detected">تم اكتشاف ورم محتمل</span>
+                            {% else %}
+                            <span data-translate="analysis.result.normal">لم يتم اكتشاف أورام</span>
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.detections.count">عدد الاكتشافات:</span>
+                        <span class="value">{{ analysis.num_detections }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label" data-translate="detail.max.confidence">أعلى ثقة:</span>
+                        <span class="value">{{ "%.1f"|format(((analysis.max_confidence or 0) * 100)) }}%</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if analysis.image_name %}
+            <div class="image-display">
+                <h3 data-translate="detail.analyzed.image">الصورة المحللة</h3>
+                <div class="image-container">
+                    <img src="{{ url_for('uploaded_file', filename=analysis.image_name) }}" alt=""
+                        class="analysis-image">
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+    .analysis-detail {
+        padding: 2rem 0;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--primary-pink);
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .info-card h3 {
+        color: var(--primary-pink);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+        padding: 0.5rem 0;
+    }
+
+    .info-row .label {
+        font-weight: bold;
+        color: var(--white);
+    }
+
+    .info-row .value {
+        color: var(--gray);
+    }
+
+    .info-row .value.positive {
+        color: var(--error);
+        font-weight: bold;
+    }
+
+    .info-row .value.negative {
+        color: var(--success);
+        font-weight: bold;
+    }
+
+    .image-display {
+        background: rgba(255, 255, 255, 0.06);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 1.5rem;
+        border-radius: 12px;
+        box-shadow: var(--shadow-md);
+    }
+
+    .image-display h3 {
+        color: var(--primary-pink);
+        margin-bottom: 1rem;
+    }
+
+    .image-container {
+        text-align: center;
+    }
+
+    .analysis-image {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 8px;
+        box-shadow: var(--shadow-md);
+    }
+</style>
+{% endblock %}
