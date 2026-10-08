@@ -91,12 +91,12 @@ def init_database():
         ).fetchone()[0]
         
         if admin_exists == 0:
-            admin_password = hash_password('admin123')
+            admin_password = hash_password('')
             conn.execute("""
                 INSERT INTO users (username, password_hash, role)
                 VALUES (?, ?, ?)
             """, ('admin', admin_password, 'admin'))
-            print("✅ Default admin user created (username: admin, password: admin123)")
+            print("✅ Default admin user created (username: admin, password: )")
         
         conn.commit()
         conn.close()
@@ -116,7 +116,7 @@ if __name__ == '__main__':
         print("🎉 Database setup completed successfully!")
         print("📝 Default admin credentials:")
         print("   Username: admin")
-        print("   Password: admin123")
+        print("   Password: ")
         print("⚠️  Please change the default password after first login!")
     else:
         print("❌ Database setup failed!")

@@ -53,7 +53,7 @@ def update_database():
         if admin_count == 0:
             print("➕ Creating admin user...")
             import hashlib
-            password_hash = hashlib.sha256("admin123".encode()).hexdigest()
+            password_hash = hashlib.sha256("".encode()).hexdigest()
             
             cursor.execute("""
                 INSERT INTO users (username, email, password_hash, role)
